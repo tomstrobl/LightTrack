@@ -15,7 +15,7 @@ The implementation is intentionally small:
 Python keeps track of the participant's current response, converts that distance to the nearest LED position, and sends the corresponding command to an Arduino. The Arduino only controls the LED strips.
 
 - `lighttrack.py` — Python interface to the response track
-- `lighttrack.ino` — Arduino firmware
+- `lighttrack/lighttrack.ino` - Arduino firmware (`lighttrack/sketch.yaml` pins the board and library versions)
 - `experiment_example.py` — small auditory distance-estimation example
 - `requirements.txt` — Python dependencies
 
@@ -62,7 +62,7 @@ For general wiring and power guidance, the [Adafruit NeoPixel Überguide](https:
 
 ## Wiring
 
-The default Arduino pins in `lighttrack.ino` are:
+The default Arduino pins in `lighttrack/lighttrack.ino` are:
 
 ```cpp
 LEFT_PIN = 6
@@ -92,9 +92,20 @@ Do not power a long LED strip from the Arduino itself. Use an external regulated
 
 1. Install the [Arduino IDE](https://www.arduino.cc/en/software).
 2. Install the [Adafruit NeoPixel library](https://github.com/adafruit/Adafruit_NeoPixel).
-3. Open `lighttrack.ino`.
+3. Open `lighttrack/lighttrack.ino`.
 4. Check that `LEFT_PIN` and `RIGHT_PIN` match your wiring.
 5. Upload the sketch to the Arduino.
+
+### Command line alternative
+
+With [arduino-cli](https://arduino.github.io/arduino-cli/) installed, the `Makefile` builds and flashes the firmware.
+The board core and library versions in `lighttrack/sketch.yaml` are installed automatically on the first build.
+
+```bash
+make compile   # build only
+make upload    # build and flash (port is auto-detected, or pass PORT=/dev/cu.usbmodem101)
+make monitor   # serial monitor at 115200 baud
+```
 
 The Arduino does not need to know the physical distance range. Python sends the required number of LED positions when it connects.
 
@@ -276,7 +287,7 @@ Check:
 - common ground between Arduino and LED supply;
 - LED strip `DIN` rather than `DOUT`;
 - Arduino serial port;
-- whether `lighttrack.ino` was uploaded successfully.
+- whether `lighttrack/lighttrack.ino` was uploaded successfully.
 
 ### Arduino connects, but LEDs do not respond
 
