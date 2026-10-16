@@ -19,6 +19,7 @@ Python keeps track of the participant's current response, converts that distance
 - `experiment_example.py` — small auditory distance-estimation example
 - `requirements.txt` — Python dependencies
 - `hardware/pcb-board/` - KiCad 10 schematic and PCB of a carrier board for the Arduino Nano R4, with screw terminals for the 5 V supply, both LED strips and power injection
+- `hardware/enclosure/` - Blender model of the controller enclosure
 
 ---
 
