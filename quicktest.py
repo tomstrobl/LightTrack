@@ -1,8 +1,8 @@
 """
-Quick test: controller input
-----------------------------
+Quick test: controller input and marker
+---------------------------------------
 
-Checks that the LightTrack connection and the controller work.
+Checks that the LightTrack connection, the controller and the LEDs work.
 
 What it does:
 
@@ -10,28 +10,32 @@ What it does:
     2. Uses the first controller pygame finds.
        If there is none, it opens a small window and uses the keyboard:
        Up/Down arrows act like the joystick, Space acts like A.
-    3. Prints the joystick, D-pad and A button values ten times per second.
+    3. Shows a red marker in the middle of the track.
+       The joystick (or Up/Down) moves it, the D-pad moves it in small steps.
+    4. A (or Space) turns the marker green to confirm the position.
+       It turns red again as soon as it moves.
 
-The LEDs do not light up yet. Moving the marker is added in the next steps.
-
-Stop the script with Ctrl+C in the terminal.
+Stop the script with Ctrl+C in the terminal or by closing the pygame window.
+The LEDs are switched off when the script stops.
 """
-
-from time import sleep
 
 import pygame
 
 from lighttrack import LightTrack
 
-track = LightTrack("/dev/cu.usbmodem1101", 1, 19, 30) # first LED 1m from participant, last LED 19m from participant, 30 LEDs / m
+TRACK_START_M = 1   # first LED, in metres from the participant
+TRACK_END_M = 19    # last LED, in metres from the participant
+SPEED_M_PER_S = 2.0 # marker speed with the joystick pushed all the way
+DPAD_STEP_M = 0.1   # how far one D-pad press moves the marker
+CHECKS_PER_S = 50   # how often the input is read
+
+track = LightTrack("/dev/cu.usbmodem1101", TRACK_START_M, TRACK_END_M, 30) # 30 LEDs / m
 
 # Use the first controller pygame can find, or the keyboard if there is none.
 pygame.init()
-pygame.joystick.init()
 
 if pygame.joystick.get_count() > 0:
     controller = pygame.joystick.Joystick(0)
-    controller.init()
     print("Controller:", controller.get_name())
 else:
     controller = None
@@ -45,24 +49,65 @@ else:
     print("No controller found, using the keyboard.")
     print("Click the pygame window, then use the arrow keys and Space.")
 
-# Read the input over and over and print what it reports.
-# Stop with Ctrl+C in the terminal.
-while True:
-    pygame.event.pump()
+# Start with a red marker in the middle of the track.
+position_m = (TRACK_START_M + TRACK_END_M) / 2
+track.show(position_m)
+print(f"Marker: {track.position_m:.2f} m")
 
-    if controller is not None:
-        stick_y = controller.get_axis(1)
-        dpad_y = controller.get_hat(0)[1]
-        a_pressed = controller.get_button(0)
-    else:
-        keys = pygame.key.get_pressed()
+moving = False
+clock = pygame.time.Clock()
 
-        # Up/Down arrows act like the stick pushed all the way.
-        # Like the stick, up is negative.
-        stick_y = keys[pygame.K_DOWN] - keys[pygame.K_UP]
-        dpad_y = 0
-        a_pressed = keys[pygame.K_SPACE]
+try:
+    while True:
+        old_position_m = position_m
 
-    print(f"stick: {stick_y:+.2f}   dpad: {dpad_y:+d}   A: {a_pressed}")
+        # Single presses arrive as events, so none of them gets lost.
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                # Ctrl+C in the terminal or the window was closed.
+                raise SystemExit
 
-    sleep(0.1)
+            elif event.type == pygame.WINDOWFOCUSLOST:
+                print("The pygame window lost focus, click it to use the keyboard again.")
+
+            elif event.type == pygame.WINDOWFOCUSGAINED:
+                print("The pygame window has focus, the keyboard works.")
+
+            elif (event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE) or (
+                event.type == pygame.JOYBUTTONDOWN and event.button == 0
+            ):
+                print(f"Confirmed: {track.confirm():.2f} m")
+
+            elif event.type == pygame.JOYHATMOTION:
+                # D-pad up is +1, down is -1.
+                position_m += event.value[1] * DPAD_STEP_M
+
+        # Held input moves the marker continuously.
+        # Like the joystick, the Up arrow is negative.
+        if controller is not None:
+            stick_y = controller.get_axis(1)
+        else:
+            keys = pygame.key.get_pressed()
+            stick_y = keys[pygame.K_DOWN] - keys[pygame.K_UP]
+
+        # Ignore small joystick movements around the centre.
+        if abs(stick_y) > 0.08:
+            position_m -= stick_y * SPEED_M_PER_S / CHECKS_PER_S
+
+        # Keep the marker on the track.
+        position_m = max(TRACK_START_M, min(TRACK_END_M, position_m))
+
+        if position_m != old_position_m:
+            track.show(position_m)
+            moving = True
+        elif moving:
+            # Print where the marker stopped, not every LED it passes.
+            print(f"Marker: {track.position_m:.2f} m")
+            moving = False
+
+        clock.tick(CHECKS_PER_S)
+finally:
+    # Switch the LEDs off however the script stops.
+    track.clear()
+    track.close()
+    pygame.quit()
