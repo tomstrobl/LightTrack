@@ -36,7 +36,7 @@ from lighttrack import LightTrack
 #
 # These are the values a new user is most likely to change.
 
-PORT = "/dev/cu.usbmodem1101"
+PORT = "/dev/cu.usbmodem101"
 
 TRACK_START_M = 1.0  # first LED 1 m from the participant
 TRACK_END_M = 20.0  # last LED 20 m from the participant
