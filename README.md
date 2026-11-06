@@ -47,9 +47,7 @@ Wiring of the controller board (`hardware/pcb-board/`):
 
 <p align="center"><img src="hardware/pcb-board/lighttrack-controller-schematic.svg" alt="LightTrack controller schematic"></p>
 
-In the assembled controller, the panel-mount DC jack is wired to J1, J2 and J3 lead to the two JST sockets in the enclosure wall, and J4 is reachable through the slot in the wall for power injection:
-
-<p align="center"><img src="images/controller-board.webp" alt="The assembled LightTrack controller board in the enclosure"></p>
+In the assembled controller, the panel-mount DC jack is wired to J1; J2 and J3 lead to the two JST sockets in the enclosure wall; J4 is reachable through the slot in the wall for power injection.
 
 The Arduino and the LED power supply must share a **common ground**.
 
